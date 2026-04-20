@@ -17,34 +17,42 @@ export default function Home() {
   const [data, setData] = useState<SaleOrder[]>([]);
   const [error, setError] = useState("");
 
-  // abhi sirf dummy data for design
-  const handlePreview = () => {
+  const handlePreview = async () => {
     if (!fromDate || !toDate) {
       setError("Please select both dates");
       return;
     }
+
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      setData([
-        {
-          id: 1,
-          name: "SO0001",
-          date_order: "2026-04-01",
-          customer: "Test Customer 1",
-          amount_total: 1500,
-        },
-        {
-          id: 2,
-          name: "SO0002",
-          date_order: "2026-04-02",
-          customer: "Test Customer 2",
-          amount_total: 2750.5,
-        },
-      ]);
+    try {
+      const res = await fetch("/api/sync-sos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromDate, toDate }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.error || "Request failed");
+      }
+
+      const mapped = (json.data || []).map((so: any, index: number) => ({
+        id: so.id || index,
+        name: so.name,
+        date_order: so.date_order,
+        customer: Array.isArray(so.partner_id) ? so.partner_id[1] : so.partner_id,
+        amount_total: so.amount_total,
+      }));
+
+      setData(mapped);
+    } catch (e: any) {
+      setError(e.message || "Something went wrong");
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   return (
@@ -55,7 +63,7 @@ export default function Home() {
           <div>
             <h1 className="text-2xl font-semibold">Odoo SO Sync Designer</h1>
             <p className="text-sm text-slate-400">
-              Pehle yahan UI finalize karein, phir Odoo se real data connect karenge.
+              Select date range and fetch Sale Orders from Odoo.
             </p>
           </div>
           <button
@@ -63,7 +71,7 @@ export default function Home() {
             disabled={loading || !fromDate || !toDate}
             className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-sm font-medium px-4 py-2 rounded-lg"
           >
-            {loading ? "Loading..." : "Preview Dummy Data"}
+            {loading ? "Loading..." : "Sync SOs"}
           </button>
         </div>
 
@@ -130,7 +138,7 @@ export default function Home() {
           <div className="bg-slate-800/70 border border-slate-700 rounded-xl px-4 py-3">
             <p className="text-xs text-slate-400">Status</p>
             <p className="text-sm mt-1">
-              {loading ? "Fetching sample data..." : "Design mode (dummy data)"}
+              {loading ? "Fetching from Odoo..." : "Ready"}
             </p>
           </div>
         </div>
@@ -161,7 +169,7 @@ export default function Home() {
                     className="px-3 py-4 text-center text-slate-400"
                     colSpan={4}
                   >
-                    No data yet. Select dates and click Preview Dummy Data.
+                    No data yet. Select dates and click Sync SOs.
                   </td>
                 </tr>
               )}

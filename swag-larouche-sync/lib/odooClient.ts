@@ -1,6 +1,6 @@
 import { OdooClient } from "@tapni/odoo-xmlrpc";
 
-const odoo = new Odoo({
+const odoo = new OdooClient({
   url: process.env.ODOO_URL || "",
   db: process.env.ODOO_DB || "",
   username: process.env.ODOO_USERNAME || "",

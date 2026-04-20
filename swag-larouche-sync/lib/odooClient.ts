@@ -1,4 +1,4 @@
-import Odoo from "@tapni/odoo-xmlrpc";
+import { OdooClient } from "@tapni/odoo-xmlrpc";
 
 const odoo = new Odoo({
   url: process.env.ODOO_URL || "",
